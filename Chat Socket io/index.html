@@ -1,0 +1,102 @@
+<!doctype html>
+<html id="html">
+<head>
+    <title>Socket.IO chat</title>
+    <link rel="stylesheet" type="text/css" href="/public/CSS/styles.css"/>
+</head>
+<body id="body">
+
+<div class="general" id="id_gen">
+    <div class="separador" id="d_separador">
+        <div id="div_username">
+            <form action="" id="form_username">
+                <input id="username" autocomplete="off" placeholder="Your name ...">
+                <button id="btn_user"> Send</button>
+            </form>
+        </div>
+
+        <div class="Users" id="id_users">
+            <p id="p_usuarios">Usuarios</p>
+            <ul class="l_users" id="id_l_users">
+
+            </ul>
+        </div>
+
+        <div class="d_mensajes" id="id_d_mensajes">
+            <ul id="messages"></ul>
+            <form action="" class="f_men_clas" id="form_men">
+                <p id="p_typing"></p>
+                <input id="m" autocomplete="off"/>
+                <button id="enviar">Send</button>
+            </form>
+        </div>
+    </div>
+
+
+</div>
+
+<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    var socket = io();
+
+    $('#form_men').submit(function () {
+        var men = $('#m').val();
+        socket.emit('chat message', men);
+        $('#m').val('');
+        return false;
+    });
+    $('#form_username').submit(function () {
+        var user = $('#username').val();
+        socket.emit('add user', user);
+        $('#username').val('');
+        return false;
+    });
+
+    socket.on('chat message', function (msg, user) {
+        $('#messages').append($('<li>').text(user + ': ' + msg));
+    });
+
+    socket.on('private message', function (res) {
+        console.log(res);
+    });
+
+    socket.on('add user', function (user) {
+        $('#id_l_users').append($('<li>').text(user));
+    });
+    socket.on('user exist', function (user) {
+        alert('El usuario ' + user + ' ya existe.');
+    });
+    socket.on('user disconnects', function (usuarios) {
+        $('#id_l_users').empty();
+        console.log(usuarios);
+        for (user in usuarios) {
+            $('#id_l_users').append($('<li>').text(user));
+        }
+    });
+    socket.on('getusuarios', function (data) {
+        console.log(data);
+        $('#id_l_users').empty();
+        for (user in data) {
+            $('#id_l_users').append($('<li>').text(user));
+        }
+    });
+
+    socket.on("private", function (data) {
+        $('#messages').append('<li class="private"><em><strong>' + data.from + ' -> ' +
+            data.username + '</strong>: ' + data.message + '</em></li>');
+    });
+
+
+    $('#m').addEventListener('keyup', function () {
+        console.log('User is typing');
+        io.emit('user typing', socket.username);
+    });
+
+    socket.on('user typing', function (data) {
+        $('#p_typing').value(data.username + ' is typing.');
+
+    });
+</script>
+</body>
+</html>
